@@ -4,18 +4,24 @@ import path from "path";
 let browser: Browser | null = null;
 
 export async function getBrowserInstance(): Promise<Browser> {
-	if (browser && browser.process() !== null) return browser;
+    if (browser && browser.process()) return browser;
 
-	browser = await puppeteer.launch({
-		executablePath: "/var/www/chrome/linux-141.0.7390.122/chrome-linux64/chrome", // <-- your installed chrome path
-		args: [
-			"--no-sandbox",
-			"--disable-setuid-sandbox",
-			"--disable-gpu",
-			"--single-process",
-			"--no-zygote",
-		],
-		headless: true,
-	});
-	return browser;
+    try {
+        browser = await puppeteer.launch({
+            executablePath: "/var/www/chrome/linux-141.0.7390.122/chrome-linux64/chrome",
+            args: [
+                "--no-sandbox",
+                "--disable-setuid-sandbox",
+                "--disable-gpu",
+                "--single-process",
+                "--no-zygote",
+            ],
+            headless: true,
+        });
+        return browser;
+    } catch (err) {
+        console.error("Failed to launch browser:", err);
+        throw err;
+    }
 }
+
