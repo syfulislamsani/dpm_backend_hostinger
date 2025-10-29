@@ -8,7 +8,7 @@ export async function getBrowserInstance(): Promise<Browser> {
 
     try {
         browser = await puppeteer.launch({
-            executablePath: "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
+            executablePath: "/var/www/chrome/linux-141.0.7390.122/chrome-linux64/chrome",
             args: [
                 "--no-sandbox",
                 "--disable-setuid-sandbox",
