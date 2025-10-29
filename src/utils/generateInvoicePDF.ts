@@ -26,11 +26,11 @@ const escapeHtml = (str: any) => {
 // Try to embed the local SVG logo as a data URL so Puppeteer can render it reliably
 const getInlineLogoDataUrl = (): string => {
 	const candidates = [
-		path.join(process.cwd(), "src", "utils", "logo", "icon.svg"),
+		path.join(process.cwd(), "src", "utils", "logo", "Untitled-1.png"),
 		path.join(process.cwd(), "src", "utils", "logo", "logo.svg"),
-		path.join(__dirname, "logo", "icon.svg"),
+		path.join(__dirname, "logo", "Untitled-1.png"),
 		path.join(__dirname, "logo", "logo.svg"),
-		path.join(process.cwd(), "dist", "utils", "logo", "icon.svg"),
+		path.join(process.cwd(), "dist", "utils", "logo", "Untitled-1.png"),
 		path.join(process.cwd(), "dist", "utils", "logo", "logo.svg"),
 	];
 	const mimeByExt: Record<string, string> = {
