@@ -523,8 +523,8 @@ const buildInvoiceHTML = (order: any) => {
 					table { width:100%; border-collapse:collapse; border-spacing:0; border:1px solid #000; }
 					table th, table td { border:1px solid #000; }
 					table.items { border-radius:0; overflow:hidden; }
-					table.items thead th { background:#3871C2; color:#fff; font-weight:700; font-size:14px; padding:3px 3px; }
-					table.items tbody td { padding:2px 3px; font-size:10px; word-break:break-word; }
+					table.items thead th { background:#3871C2; color:#fff; font-weight:700; font-size:14px; padding:2px 3px; }
+					table.items tbody td { padding:2px 3px; font-size:11px; word-break:break-word; }
 					.col-sn{ width:44px; text-align:center; }
 					.col-desc{ width:auto; }
 					.col-qty{ width:100px; text-align:center; }
