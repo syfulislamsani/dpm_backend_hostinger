@@ -661,7 +661,7 @@ const generateInvoicePDF = async (order: any) => {
 		await page.setViewport({
 			width: 794,
 			height: 1123,
-			deviceScaleFactor: 5,
+			deviceScaleFactor: 1,
 		});
 
 		const html = buildInvoiceHTML(order);
