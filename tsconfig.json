@@ -13,7 +13,7 @@
 		"resolveJsonModule": true,
 		"experimentalDecorators": true,
 		"emitDecoratorMetadata": true,
-		"noEmit" : true,
+		"noEmit" : false,
 		"allowImportingTsExtensions": true,
 		"baseUrl": "./",
 		"typeRoots": ["./node_modules/@types", "./src/types"],
