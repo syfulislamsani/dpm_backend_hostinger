@@ -1,55 +1,113 @@
 import puppeteer from "puppeteer";
+import fs from "fs";
+import path from "path";
 
 type OrderItem = any;
 type Payment = any;
 
 const formatCurrency = (v: number | string) => {
 	const n = Number(v || 0);
-	return n.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+	return n.toLocaleString(undefined, {
+		minimumFractionDigits: 0,
+		maximumFractionDigits: 0,
+	});
 };
 
 const escapeHtml = (str: any) => {
 	if (str == null) return "";
 	return String(str)
-		.replace(/&/g, '&amp;')
-		.replace(/</g, '&lt;')
-		.replace(/>/g, '&gt;')
-		.replace(/"/g, '&quot;')
-		.replace(/'/g, '&#39;');
+		.replace(/&/g, "&amp;")
+		.replace(/</g, "&lt;")
+		.replace(/>/g, "&gt;")
+		.replace(/"/g, "&quot;")
+		.replace(/'/g, "&#39;");
+};
+
+// Try to embed the local SVG logo as a data URL so Puppeteer can render it reliably
+const getInlineLogoDataUrl = (): string => {
+	const candidates = [
+		path.join(process.cwd(), "src", "utils", "logo", "Untitled-1.png"),
+		path.join(process.cwd(), "src", "utils", "logo", "logo.svg"),
+		path.join(__dirname, "logo", "Untitled-1.png"),
+		path.join(__dirname, "logo", "logo.svg"),
+		path.join(process.cwd(), "dist", "utils", "logo", "Untitled-1.png"),
+		path.join(process.cwd(), "dist", "utils", "logo", "logo.svg"),
+	];
+	const mimeByExt: Record<string, string> = {
+		".svg": "image/svg+xml",
+		".svgz": "image/svg+xml",
+		".png": "image/png",
+		".jpg": "image/jpeg",
+		".jpeg": "image/jpeg",
+		".webp": "image/webp",
+	};
+	for (const p of candidates) {
+		try {
+			if (fs.existsSync(p)) {
+				const fileBuffer = fs.readFileSync(p);
+				const b64 = Buffer.from(fileBuffer).toString("base64");
+				const ext = path.extname(p).toLowerCase();
+				const mime = mimeByExt[ext] || "application/octet-stream";
+				return `data:${mime};base64,${b64}`;
+			}
+		} catch {}
+	}
+	return (
+		process.env.INVOICE_LOGO_URL ||
+		"http://localhost:4000/static/static-images/logo.png"
+	);
 };
 
 const buildInvoiceHTML = (order: any) => {
 	const items: OrderItem[] = order.orderItems || [];
 	const payments: Payment[] = order.payments || [];
 	const itemsPerPage = 6;
-	const totalItemPages = Math.max(1, Math.ceil(items.length / itemsPerPage));
 
 	const company = {
 		name: "Dhaka Plastic & Metal",
 		phone: "+8801919960198",
 		phone2: "+8801858253961",
 		email: "info@dpmsign.com",
-		address: "Shop No: 94 & 142, Dhaka University Market, Katabon Road, Dhaka-1000",
-		logo: process.env.INVOICE_LOGO_URL || "http://localhost:4000/static/static-images/logo.png",
+		address:
+			"Shop No: 94 & 142, Dhaka University Market, Katabon Road, Dhaka-1000",
+		logo: getInlineLogoDataUrl(),
 	};
 
 	const invoiceNo = order.orderId;
-	const orderDate = order.createdAt ? new Date(order.createdAt).toLocaleDateString() : "";
-	const deliveryDate = order.deliveryDate ? new Date(order.deliveryDate).toLocaleDateString() : "";
+	const orderDate = order.createdAt
+		? new Date(order.createdAt).toLocaleDateString()
+		: "";
+	const deliveryDate = order.deliveryDate
+		? new Date(order.deliveryDate).toLocaleDateString()
+		: "";
 
-	const currency = order.currencyCode || order.currency || 'BDT';
-	const displayCurrency = /bdt|tk/i.test(String(currency)) ? 'Tk' : String(currency);
+	const currency = order.currencyCode || order.currency || "BDT";
+	const displayCurrency = /bdt|tk/i.test(String(currency))
+		? "Tk"
+		: String(currency);
 	// Financial calculations (mirror frontend logic)
 	const toNum = (v: unknown) => {
 		const n = Number(v);
 		return Number.isFinite(n) ? n : 0;
 	};
 
-	const computedSubTotal = items.reduce((s, it) => s + toNum(it.price || 0), 0);
-	const subTotal = computedSubTotal > 0 ? computedSubTotal : toNum(order.orderTotalPrice || order.totalAmount || 0);
+	const computedSubTotal = items.reduce(
+		(s, it) => s + toNum(it.price || 0),
+		0,
+	);
+	const subTotal =
+		computedSubTotal > 0
+			? computedSubTotal
+			: toNum(order.orderTotalPrice || order.totalAmount || 0);
 
 	// Grand total (prefer coupon-checked price if provided on order)
-	const grandTotal = toNum(order.orderTotalCouponCheckedPrice ?? order.grandTotal ?? order.orderTotalPrice ?? order.totalAmount ?? 0);
+	const grandTotal = toNum(
+		order.orderTotalCouponCheckedPrice ??
+			order.grandTotal ??
+			order.orderTotalPrice ??
+			order.totalAmount ??
+			0,
+	);
 
 	const agg = items.reduce(
 		(acc, it) => {
@@ -68,23 +126,38 @@ const buildInvoiceHTML = (order: any) => {
 				designChargeTotal: acc.designChargeTotal + design,
 			};
 		},
-		{ unitBaseTotal: 0, additionalTotal: 0, itemDiscountTotal: 0, designChargeTotal: 0 }
+		{
+			unitBaseTotal: 0,
+			additionalTotal: 0,
+			itemDiscountTotal: 0,
+			designChargeTotal: 0,
+		},
 	);
 
 	const discountAmount = Math.ceil(Math.max(0, subTotal - grandTotal));
 
 	const totalPaidAmount = (payments || []).reduce(
-		(acc, curr) => acc + ((curr.isPaid || curr.paymentMethod === "cod-payment") ? toNum(curr.amount) : 0),
-		0
+		(acc, curr) =>
+			acc +
+			(curr.isPaid || curr.paymentMethod === "cod-payment"
+				? toNum(curr.amount)
+				: 0),
+		0,
 	);
 
 	const amountDue = Math.max(0, grandTotal - totalPaidAmount);
 
-	const staffName = order.staffName || order.staff?.name || order.agentInfo?.name || "";
-	const staffPhone = order.staffPhone || order.staff?.phone || order.agentInfo?.phone || order.agentInfo?.contactNo || "";
+	const staffName =
+		order.staffName || order.staff?.name || order.agentInfo?.name || "";
+	const staffPhone =
+		order.staffPhone ||
+		order.staff?.phone ||
+		order.agentInfo?.phone ||
+		order.agentInfo?.contactNo ||
+		"";
 	const courierName = order.courierName || order.courier?.name || "";
 
-    const renderHeader = () => {
+	const renderHeader = () => {
 		return `
 			<div class="inv-header">
 				<div class="left">
@@ -98,8 +171,8 @@ const buildInvoiceHTML = (order: any) => {
 				<div class="right">
 					<div class="invoice-title">INVOICE</div>
 					<div class="invoice-no">DPM-${invoiceNo}</div>
-					<div class="small">Order Date: ${orderDate || '-'}</div>
-					<div class="small">Delivery Date: ${deliveryDate || '-'}</div>
+					<div class="small">Order Date: ${orderDate || "-"}</div>
+					<div class="small">Delivery Date: ${deliveryDate || "-"}</div>
 				</div>
 			</div>
 		`;
@@ -107,65 +180,107 @@ const buildInvoiceHTML = (order: any) => {
 
 	const renderFooter = () => {
 		return `
-			<div class="inv-footer">
-				<div class="footer-top">
-					<div class="nb">
-						<div><b>NB: Delivery and Installation charges are the customer's responsibility (if applicable).</b></div>
-						<div>Thank you for choosing Dhaka Plastic & Metal!</div>
-					</div>
-					<div class="staff-block">
-						<div class="staff-name">${escapeHtml(staffName || '')}</div>
-						<div class="staff-phone">${escapeHtml(staffPhone || '')}</div>
-						<div class="sig-line"></div>
-						<div class="sig-label">Authorized Signature</div>
-						<div class="sig-for">For Dhaka Plastic & Metal</div>
-					</div>
+		<div class="inv-footer">
+			<div class="footer-top">
+				<div class="nb">
+					<div><b>NB: Delivery and Installation charges are the customer's responsibility (if applicable).</b></div>
+					<div>Thank you for choosing Dhaka Plastic & Metal!</div>
 				</div>
-				<div class="footer-divider"></div>
-				<div class="contact-row">
-					<div class="col left">
+				<div class="staff-block">
+					<div class="staff-name">${escapeHtml(staffName || "")}</div>
+					<div class="staff-phone">${escapeHtml(staffPhone || "")}</div>
+					<div class="sig-line"></div>
+					<div class="sig-label">Authorized Signature</div>
+					<!-- <div class="sig-for">For Dhaka Plastic & Metal</div> -->
+				</div>
+			</div>
+
+			<div class="footer-divider"></div>
+
+			<div class="contact-row">
+				<!-- Left Column: Phone -->
+				<div class="col left">
+					<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+						<path d="M3 5a2 2 0 012-2h2.3a1 1 0 01.97.757l.7 2.8a1 1 0 01-.24.92L7.4 9.6a15.05 15.05 0 006 6l1.2-1.6a1 1 0 01.92-.24l2.8.7A1 1 0 0121 16.7V19a2 2 0 01-2 2h-1C8.5 21 3 15.5 3 8V5z"/>
+					</svg>
+					<div>
 						<div>${company.phone}</div>
 						<div>${company.phone2}</div>
 					</div>
-					<div class="col center">${company.email}</div>
-					<div class="col right">${company.address}</div>
+				</div>
+
+				<!-- Center Column: Email -->
+				<div class="col center">
+					<svg width="24" height="24" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+  						<path d="M2 4a2 2 0 012-2h16a2 2 0 012 2v16a2 2 0 01-2 2H4a2 2 0 01-2-2V4zm2 0v0.01L12 13 20 4.01V4H4zm16 16V8l-8 6-8-6v12h16z" fill="#3871C2"/>
+					</svg>
+
+					<div>${company.email}</div>
+				</div>
+
+				<!-- Right Column: Location -->
+				<div class="col right">
+					<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+						<path d="M12 2a7 7 0 017 7c0 5-7 13-7 13S5 14 5 9a7 7 0 017-7zm0 9a2 2 0 100-4 2 2 0 000 4z"/>
+					</svg>
+					<div>
+						<div>Shop No: 94 & 142, Dhaka University</div>
+						<div>Market, Katabon Road, Dhaka-1000</div>
+					</div>
 				</div>
 			</div>
-		`;
+		</div>
+	`;
 	};
 
-	const renderItemsTable = (pageIndex: number) => {
-		const start = pageIndex * itemsPerPage;
-		const pageItems = items.slice(start, start + itemsPerPage);
+	const renderItemsTable = (
+		pageStartIndex: number,
+		pageItems: OrderItem[],
+	) => {
 		const rows = pageItems
 			.map((it, idx) => {
-				const productName = it.unlistedProduct?.name || it.product?.name || "Item";
-				const details = (it.productVariant?.variantDetails || []) as any[];
+				const productName =
+					it.unlistedProduct?.name || it.product?.name || "Item";
+				const details = (it.productVariant?.variantDetails ||
+					[]) as any[];
 				const detailLabels = details
 					.map((detail: any) => {
-						const varName = detail?.variationItem?.variation?.name || "";
-						const varUnit = detail?.variationItem?.variation?.unit || "";
+						const varName =
+							detail?.variationItem?.variation?.name || "";
+						const varUnit =
+							detail?.variationItem?.variation?.unit || "";
 						const val = detail?.variationItem?.value || "";
-						return varName ? `${varName}: ${val} ${varUnit}` : String(val || "");
+						return varName
+							? `${varName}: ${val} ${varUnit}`
+							: String(val || "");
 					})
 					.filter(Boolean)
 					.join("; ");
 
 				const sizeNum = toNum(it.size);
-				const sizeLabel = Number.isFinite(sizeNum) && sizeNum > 0 && it.widthInch != null && it.heightInch != null ? ` (${it.widthInch} inch x ${it.heightInch} inch)` : "";
+				const sizeLabel =
+					Number.isFinite(sizeNum) &&
+					sizeNum > 0 &&
+					it.widthInch != null &&
+					it.heightInch != null
+						? ` (${it.widthInch} inch x ${it.heightInch} inch)`
+						: "";
 
 				const qty = Math.max(1, toNum(it.quantity));
-				const unitBase = toNum(it.unitPrice) + toNum(it.additionalPrice);
+				const unitBase =
+					toNum(it.unitPrice) + toNum(it.additionalPrice);
 				const discPct = toNum(it.discountPercentage);
 				const hasBreakdown = unitBase > 0 || discPct > 0;
 				const fallback = qty ? toNum(it.price) / qty : 0;
-				const unitNet = hasBreakdown ? unitBase * (1 - discPct / 100) : fallback;
+				const unitNet = hasBreakdown
+					? unitBase * (1 - discPct / 100)
+					: fallback;
 				const price = toNum(it.price);
 
 				return `<tr>
-					<td class="tcenter">${start + idx + 1}</td>
-					<td><div class="item-title">${productName}${sizeLabel}</div>${detailLabels ? `<div class="item-variant">${detailLabels}</div>` : ''}${it.unlistedProduct?.description ? `<div class="item-desc">${escapeHtml(it.unlistedProduct.description)}</div>` : ''}</td>
-					<td class="tcenter">${qty}${qty > 1 ? ' pcs' : ' pc'}</td>
+					<td class="tcenter">${pageStartIndex + idx + 1}</td>
+					<td><div class="item-title">${productName}${sizeLabel}</div>${detailLabels ? `<div class="item-variant">${detailLabels}</div>` : ""}${it.unlistedProduct?.description ? `<div class="item-desc">${escapeHtml(it.unlistedProduct.description)}</div>` : ""}</td>
+					<td class="tcenter">${qty}${qty > 1 ? " pcs" : " pc"}</td>
 					<td class="tright">${formatCurrency(unitNet)} ${displayCurrency}</td>
 					<td class="tright">${formatCurrency(price)} ${displayCurrency}</td>
 				</tr>`;
@@ -195,7 +310,7 @@ const buildInvoiceHTML = (order: any) => {
 		const rows = payments
 			.map((p: any, i: number) => {
 				const method = p.paymentMethod || p.method || "";
-				const status = p.isPaid ? 'paid' : 'pending';
+				const status = p.isPaid ? "paid" : "pending";
 				const amt = toNum(p.amount);
 				return `<tr>
 					<td class="tcenter">${i + 1}</td>
@@ -204,10 +319,9 @@ const buildInvoiceHTML = (order: any) => {
 					<td class="tright">${formatCurrency(amt)} ${displayCurrency}</td>
 				</tr>`;
 			})
-			.join('\n');
+			.join("\n");
 
 		return `
-			<div class="section-title">Payment Details</div>
 			<table class="payments">
 				<thead>
 					<tr>
@@ -229,113 +343,144 @@ const buildInvoiceHTML = (order: any) => {
 			<div class="invoice-meta">
 				<div class="bill-left">
 					<div class="meta-title">Billing Information:</div>
-					<div>${escapeHtml(order.customerName || order.customer?.name || '')}</div>
-					<div>${escapeHtml(order.customerPhone || order.customer?.phone || '')}</div>
-					<div>${escapeHtml(order.customerEmail || order.customer?.email || '')}</div>
-					<div>${escapeHtml(order.billingAddress || order.customer?.billingAddress || '')}</div>
+					<div style = "font-size: 12px; font-weight: semi-bold;">Name: ${escapeHtml(order.customerName || order.customer?.name || "")}</div>
+					<div style = "font-size: 12px; font-weight: semi-bold;">Phone: ${escapeHtml(order.customerPhone || order.customer?.phone || "")}</div>
+					<div style = "font-size: 12px; font-weight: semi-bold;">Email: ${escapeHtml(order.customerEmail || order.customer?.email || "")}</div>
+					<div style = "font-size: 12px; font-weight: semi-bold;">Address: ${escapeHtml(order.billingAddress || order.customer?.billingAddress || "")}</div>
 				</div>
 				<div class="bill-right">
-					<div class="meta-title">Shipping Information:</div>
-					<div>${escapeHtml(order.deliveryMethod === 'courier' ? (courierName || 'Courier') : 'Shop Pickup')}</div>
-					<div>${escapeHtml(order.courierAddress || '')}</div>
-				</div>
+  <div class="meta-title">Shipping Information:</div>
+  <div style="font-size: 12px; font-weight: semi-bold;">
+    Shipping Method: ${escapeHtml(order.deliveryMethod === "courier" ? courierName || "Courier" : "Shop Pickup")}
+  </div>
+  ${
+		order.courierAddress
+			? `<div style="font-size: 12px; font-weight: semi-bold;">Address: ${escapeHtml(order.courierAddress)}</div>`
+			: ""
+  }
+</div>
+
 			</div>
 		`;
 	};
 
 	// Figure out last-page layout constraints before building pages
-	const lastPageItemCount = items.length === 0 ? 0 : (items.length % itemsPerPage || itemsPerPage);
-	const moveSummaryToExtra = lastPageItemCount >= 5; // keep summary off a very full page
-	const allowedPaymentsByItems: Record<number, number> = { 0: 10, 1: 8, 2: 7, 3: 5, 4: 3, 5: 1, 6: 0 };
-	const allowedPaymentsOnLastWithSummary = Math.max(0, (allowedPaymentsByItems[lastPageItemCount] ?? 0) - 1);
-	const allowedPaymentsOnLastNoSummary = (allowedPaymentsByItems[lastPageItemCount] ?? 0);
-	const movePaymentsToExtra = payments.length > 0 && (
-		(moveSummaryToExtra && payments.length > allowedPaymentsOnLastWithSummary) ||
-		(!moveSummaryToExtra && payments.length > allowedPaymentsOnLastNoSummary)
-	);
+	// Build page chunks (max 6 items per page). Keep GRAND TOTAL on the same page as the last batch of items.
+	// Split items into pages (6 per page)
+	//const itemsPerPage = 6;
+	const chunks: OrderItem[][] = [];
+	for (let i = 0; i < items.length; i += itemsPerPage) {
+		chunks.push(items.slice(i, i + itemsPerPage));
+	}
+	if (chunks.length === 0) chunks.push([]); // always at least one page
+
+	// Helper to estimate content height for payments table
+	const estimatePaymentsHeight = (numPayments: number) => {
+		// Each payment row roughly ~30px height, plus ~100px headers/margins
+		return 100 + numPayments * 30;
+	};
 
 	const pages: string[] = [];
+	let runningIndex = 0;
 
-	for (let i = 0; i < totalItemPages; i++) {
-		const isLastPage = i === totalItemPages - 1;
+	// Render each page of items
+	for (let i = 0; i < chunks.length; i++) {
+		const pageItems = chunks[i];
+		const isLastPage = i === chunks.length - 1;
 
-		let afterTableBlocks = '';
+		let afterTableBlocks = "";
+
 		if (isLastPage) {
-			const totalPaidLabel = `Amount Paid: ${formatCurrency(totalPaidAmount)} ${displayCurrency}`;
-			const amountDueLabel = `Amount Due: ${formatCurrency(amountDue)} ${displayCurrency}`;
+			// === Summary / Grand Total Section ===
 			const summaryHtml = `
-				<div class="summary-wrap">
-					<div class="summary-box">
-						<div class="row"><span>Sub Total</span><span>${formatCurrency(subTotal - agg.designChargeTotal + discountAmount)} ${displayCurrency}</span></div>
-						<div class="row"><span>Design Charge</span><span>${formatCurrency(agg.designChargeTotal)} ${displayCurrency}</span></div>
-						<div class="row"><span>Discount</span><span>${formatCurrency(discountAmount)} ${displayCurrency}</span></div>
-						<div class="grand-row"><span>GRAND TOTAL</span><span>${formatCurrency(grandTotal)} ${displayCurrency}</span></div>
-					</div>
-				</div>`;
-			const paymentsHtml = payments && payments.length > 0 ? `
-				<div class="payments-wrap">
-					${renderPayments()}
-					<div class="paid-due">
-						<div class="paid">${totalPaidLabel}</div>
-						<div class="due">${amountDueLabel}</div>
-					</div>
-				</div>` : `
-				<div class="paid-due single">
-					<div class="due">${amountDueLabel}</div>
-				</div>`;
-			const summaryBlock = moveSummaryToExtra ? '' : summaryHtml;
-			const paymentsBlock = movePaymentsToExtra ? '' : paymentsHtml;
-			afterTableBlocks = `${summaryBlock}${paymentsBlock}`;
-		}
-
-		const pageHtml = `
-			<div class="page">
-				${renderHeader()}
-				<div class="content">
-					${i === 0 ? renderBillShip() : ''}
-					<div class="section-title">Order Details</div>
-					${renderItemsTable(i)}
-					${afterTableBlocks}
-				</div>
-				${renderFooter()}
-			</div>
-		`;
-
-		pages.push(pageHtml);
-	}
-
-	// If the last page is too full or payments would clip, move blocks to a new page
-	if (moveSummaryToExtra || movePaymentsToExtra) {
-		const extraPageInner: string[] = [];
-		if (moveSummaryToExtra) {
-			extraPageInner.push(`
 			<div class="summary-wrap">
 				<div class="summary-box">
-					<div class="row"><span>Sub Total</span><span>${formatCurrency(subTotal)} ${displayCurrency}</span></div>
+					<div class="row"><span>Sub Total</span><span>${formatCurrency(subTotal - agg.designChargeTotal + discountAmount)} ${displayCurrency}</span></div>
 					<div class="row"><span>Design Charge</span><span>${formatCurrency(agg.designChargeTotal)} ${displayCurrency}</span></div>
 					<div class="row"><span>Discount</span><span>${formatCurrency(discountAmount)} ${displayCurrency}</span></div>
 					<div class="grand-row"><span>GRAND TOTAL</span><span>${formatCurrency(grandTotal)} ${displayCurrency}</span></div>
 				</div>
-			</div>`);
-		}
-		if (movePaymentsToExtra) {
-			extraPageInner.push(`
+			</div>
+		`;
+
+			// === Payment Section (conditionally moved) ===
+			const paymentsHtml =
+				payments && payments.length > 0
+					? `
 			<div class="payments-wrap">
+				<div class="section-title">Payment Details</div>
 				${renderPayments()}
 				<div class="paid-due">
 					<div class="paid">Amount Paid: ${formatCurrency(totalPaidAmount)} ${displayCurrency}</div>
 					<div class="due">Amount Due: ${formatCurrency(amountDue)} ${displayCurrency}</div>
 				</div>
-			</div>`);
+			</div>`
+					: `
+			<div class="paid-due single">
+				<div class="due">Amount Due: ${formatCurrency(amountDue)} ${displayCurrency}</div>
+			</div>`;
+
+			// Estimate if payments table would overflow current page
+			const estimatedPaymentHeight = estimatePaymentsHeight(
+				payments.length,
+			);
+			const maxPageHeight = 1050; // typical A4 height in px (approx)
+			const baseContentHeight = 600 + pageItems.length * 40; // header + items height
+
+			const fitsOnSamePage =
+				baseContentHeight + estimatedPaymentHeight < maxPageHeight;
+
+			if (fitsOnSamePage) {
+				// keep payments below summary
+				afterTableBlocks = `${summaryHtml}${paymentsHtml}`;
+			} else {
+				// move payments to new page
+				afterTableBlocks = summaryHtml;
+			}
 		}
+
+		// Build main invoice page
+		const pageHtml = `
+			<div class="page">
+				<div class="page-inner">
+					${renderHeader()}
+					<div class="content">
+						${i === 0 ? renderBillShip() : ""}
+						<div class="section-title">Order Details</div>
+						${renderItemsTable(runningIndex, pageItems)}
+						${afterTableBlocks}
+					</div>
+					${renderFooter()}
+				</div>
+			</div>
+			`;
+		pages.push(pageHtml);
+		runningIndex += pageItems.length;
+	}
+
+	// === Add an extra page for payments if it didn’t fit ===
+	const estimatedPaymentHeight = estimatePaymentsHeight(payments.length);
+	const lastChunk = chunks[chunks.length - 1];
+	const baseContentHeight = 600 + lastChunk.length * 40;
+	const maxPageHeight = 1050;
+	const paymentsNeedExtraPage =
+		baseContentHeight + estimatedPaymentHeight >= maxPageHeight;
+
+	if (paymentsNeedExtraPage && payments.length > 0) {
 		const extraPage = `
 			<div class="page">
-				${renderHeader()}
-				<div class="content">
-					<div class="section-title">Order Details</div>
-					${extraPageInner.join('\n')}
+				<div class="page-inner">
+					${renderHeader()}
+					<div class="content">
+						<div class="section-title">Payment Details</div>
+						${renderPayments()}
+						<div class="paid-due">
+							<div class="paid">Amount Paid: ${formatCurrency(totalPaidAmount)} ${displayCurrency}</div>
+							<div class="due">Amount Due: ${formatCurrency(amountDue)} ${displayCurrency}</div>
+						</div>
+					</div>
+					${renderFooter()}
 				</div>
-				${renderFooter()}
 			</div>`;
 		pages.push(extraPage);
 	}
@@ -345,9 +490,10 @@ const buildInvoiceHTML = (order: any) => {
 			<head>
 				<meta charset="utf-8" />
 				<meta name="viewport" content="width=device-width, initial-scale=1" />
-				<style>
-					@page { size: A4; margin: 5mm 7mm; }
+					<style>
+					@page { size: A4; margin: 0; } 
 					:root{
+						--page-margin: 5mm 10mm 5mm 10mm; /* top right bottom left */ 
 						--blue:#0b5fa5;
 						--blue-dark:#0a4f8a;
 						--border:#d8e2ef;
@@ -355,34 +501,37 @@ const buildInvoiceHTML = (order: any) => {
 						--muted:#6b7280;
 					}
 					body { font-family: 'Segoe UI', Arial, Helvetica, sans-serif; margin:0; padding:0; color:var(--text); }
-					.page { width: 100%; page-break-after: always; display:flex; flex-direction:column; min-height: calc(100vh ); }
+					/* Each .page represents a physical A4 page. We set an exact page box and then inset the printable area using .page-inner so the footer can be absolutely positioned inside that box. */
+					.page { width:210mm; height:297mm; page-break-after: always; position:relative; box-sizing:border-box; }
+					.page-inner { position: absolute; inset: var(--page-margin); /* top/right/bottom/left */ display:flex; flex-direction:column; box-sizing:border-box; }
 					/* Header */
 					.inv-header { display:flex; justify-content:space-between; align-items:center; padding:6px 0 10px; border-bottom:2px solid var(--blue); }
 					.inv-header .left { display:flex; align-items:center; gap:12px; }
 					.logo { width:70px; height:70px; object-fit:contain; }
 					.company-block { line-height:1.15; }
-					.company-name { font-weight:800; font-size:18px; color:var(--blue-dark); }
-					.company-tag { font-size:12px; color:var(--muted); }
+					.company-name { font-weight:700; font-size:29px; color:var(--black); }
+					.company-tag { font-size:10px; color: #000; }
 					.company-tag.small { font-size:11px; }
 					.inv-header .right { text-align:right; }
-					.invoice-title { font-weight:800; color:var(--blue); font-size:16px; letter-spacing:0.5px; }
+					.invoice-title { font-weight:800; color:var(--blue); font-size:18px; letter-spacing:0.5px; }
 					.invoice-no { font-weight:700; color:#111; }
-					.small { font-size:11px; color:var(--muted); }
-					.email-link {color: darkblue; font-size: 12px;}
-					.content { padding:10px 0 0; flex:1 0 auto; }
-					.section-title { font-weight:700; color:var(--blue); margin:10px 0 8px; font-size:13px; text-transform:uppercase; }
+					.small { font-size:10px; color: #000; }
+					.email-link {color: var(--blue); font-size: 10px;}
+					/* content area uses flex-grow so the footer can stay pinned without absolute positioning */
+					.content { padding:10px 0 20px; flex:1 0 auto; overflow: visible; }
+					.section-title { font-weight:700; color: #000; margin:10px 0 8px; font-size:13px; text-transform:uppercase; }
 
 					/* Billing/Shipping */
 					.invoice-meta { display:flex; justify-content:space-between; gap:16px; padding:8px 0 6px; }
-					.bill-left, .bill-right { width:50%; font-size:12px; border:1px solid var(--border); border-radius:6px; padding:8px 10px; }
-					.meta-title { font-weight:700; color:var(--blue-dark); margin-bottom:6px; font-size:12px; }
+					.bill-left, .bill-right { width:50%; font-size:11px; padding:8px 10px; }
+					.meta-title { font-weight:700; color:#000; margin-bottom:6px; font-size:14px; }
 
 					/* Table */
-					table { width:100%; border-collapse:separate; border-spacing:0; }
-					table.items { border:1px solid var(--blue); border-radius:8px; overflow:hidden; }
-					table.items thead th { background:var(--blue); color:#fff; font-weight:700; font-size:12px; padding:8px 8px; border-right:1px solid rgba(255,255,255,0.2); }
-					table.items thead th:last-child{ border-right:0; }
-					table.items tbody td { padding:10px 8px; border-top:1px solid var(--border); font-size:12px; word-break:break-word; }
+					table { width:100%; border-collapse:collapse; border-spacing:0; border:1px solid #000; }
+					table th, table td { border:1px solid #000; }
+					table.items { border-radius:0; overflow:hidden; }
+					table.items thead th { background:#3871C2; color:#fff; font-weight:700; font-size:12px; padding:6px 6px; }
+					table.items tbody td { padding:8px 6px; font-size:12px; word-break:break-word; }
 					.col-sn{ width:44px; text-align:center; }
 					.col-desc{ width:auto; }
 					.col-qty{ width:100px; text-align:center; }
@@ -392,53 +541,94 @@ const buildInvoiceHTML = (order: any) => {
 					.tcenter { text-align:center; }
 					.tright { text-align:right; }
 					.item-variant { font-size:11px; color:#5f6c7b; margin-top:3px; }
-					.item-desc { font-size:11px; color:#4b5563; margin-top:4px; }
-					.item-title { font-weight:600; color:#111827; }
+					.item-desc { font-size:12px; color:#4b5563; margin-top:4px; }
+					.item-title { font-weight:600; color:#111827; font-size:13px; }
 
 					/* Summary */
 					.summary-wrap{ display:flex; justify-content:flex-end; margin-top:12px; }
-					.summary-box{ width:320px; border:1px solid var(--blue); border-radius:8px; overflow:hidden; font-size:12px; }
-					.summary-box .row{ display:flex; justify-content:space-between; padding:8px 10px; border-bottom:1px solid var(--border); }
-					.summary-box .grand-row{ display:flex; justify-content:space-between; padding:10px; background:var(--blue); color:#fff; font-weight:800; }
+					.summary-box{ width:320px; border-radius:0px; overflow:hidden; font-size:12px; font-weight:600; }
+					.summary-box .row{ display:flex; justify-content:space-between; padding:8px 10px; }
+					.summary-box .grand-row{ display:flex; justify-content:space-between; padding:10px; background:#3871C2; color:#fff; font-weight:800; }
 
 					/* Payments */
 					.payments-wrap{ margin-top:12px; }
-					table.payments{ border:1px solid var(--blue); border-radius:8px; overflow:hidden; width:100%; border-collapse:separate; border-spacing:0; }
-					.payments thead th { background:var(--blue); color:#fff; border-right:1px solid rgba(255,255,255,0.2); padding:8px 10px; font-size:12px; text-align:left; }
-					.payments thead th:last-child{ border-right:0; }
-					.payments tbody td { padding:9px 10px; border-bottom:1px solid var(--border); font-size:12px; word-break:break-word; }
+					table.payments{ border:1px solid #000; border-radius:0; overflow:hidden; width:100%; }
+					.payments thead th { background:#3871C2; color:#fff; padding:8px 10px; font-size:12px; }
+					.payments tbody td { padding:9px 10px; font-size:12px; word-break:break-word; }
 					.col-pay-sn{ width:60px; text-align:center; }
-					.col-pay-method{ width:auto; }
-					.col-pay-status{ width:140px; text-align:center; }
+					.col-pay-method{ width:auto; text-align:left; }
+					.col-pay-status{ width:140px; text-align:left; }
 					.col-pay-amount{ width:160px; text-align:right; }
-					.status.paid{ color:#0a7f2e; font-weight:700; text-transform:capitalize; }
-					.status.pending{ color:#b45309; font-weight:700; text-transform:capitalize; }
+					.status.paid{ color:#0a7f2e; font-weight:700; text-transform:capitalize; text-align:left; }
+					.status.pending{ color:#b45309; font-weight:700; text-transform:capitalize; text-align:left; }
 					.paid-due{ display:flex; justify-content:space-between; margin-top:8px; font-weight:700; }
 					.paid-due.single{ justify-content:flex-end; }
 					.paid{ color:#0a7f2e; }
 					.due{ color:#111; }
 
 					/* Footer */
-					.inv-footer { border-top:none; padding-top:10px; margin-top:auto; }
+					/* Footer stays at the bottom via flex layout so it prints without extra blank space. */
+					.inv-footer { border-top:none; padding-top:6px; position:relative; margin-top:auto; box-sizing:border-box; }
 					.footer-top{ display:flex; justify-content:space-between; align-items:flex-start; gap:16px; }
+					.footer-top .staff-block{ margin-left:auto; }
 					.inv-footer .nb{ max-width:65%; font-size:12px; color:#111; display:none; }
 					.page:last-child .inv-footer .nb{ display:block; }
 					.nb b{ font-weight:800; }
 					.staff-block{ text-align:right; min-width:220px; }
-					.staff-name{ font-weight:700; }
-					.staff-phone{ font-size:12px; color:#374151; margin-bottom:6px; }
+					.staff-name{ font-size: 12px; font-weight:700; }
+					.staff-phone{ font-size:11px; color:#374151; margin-bottom:6px; }
 					.sig-line{ width:180px; height:1px; background:#999; margin-left:auto; }
-					.sig-label{ font-size:11px; color:#333; margin-top:4px; }
-					.sig-for{ font-size:11px; color:#555; }
-					.footer-divider{ height:1px; background:#9aa4b2; margin:10px 0 6px; opacity:.6; }
-					.contact-row{ display:flex; justify-content:space-between; align-items:flex-start; gap:12px; font-size:11px; color:#334155; }
-					.contact-row .col{ flex:1; }
-					.contact-row .center{ text-align:center; }
-					.contact-row .right{ text-align:right; }
+					.sig-label{ font-size:12px; color:#333; margin-top:4px; }
+					.sig-for{ font-size:12px; color:#555; }
+					.footer-divider{ height:1px; background:#9aa4b2; margin:6px 0 4px; opacity:.6; }
+					.contact-row {
+						display: flex;
+						justify-content: space-between;
+						align-items: center;
+						gap: 12px;
+						font-size: 12px;
+						color: #334155;
+					}
+
+					.contact-row .col {
+						flex: 1;
+						display: flex;
+						align-items: center;
+						gap: 4px; /* space between icon and text */
+					}
+
+					.contact-row .col svg {
+						width: 1.2em;
+						height: 1.2em;
+						min-width: 1.2em;
+						fill: #3871C2;
+						flex-shrink: 0;
+					}
+
+					.contact-row .left div {
+						margin: 0;
+						line-height: 1.3;
+					}
+
+					.contact-row .center {
+						justify-content: center;
+						text-align: center;
+					}
+
+					.contact-row .right {
+						justify-content: flex-start;
+						text-align: right;
+						flex: 0 0 auto;
+					}
+
+					/* Prevent clipping: avoid breaking summary and payment blocks across page boundaries and table rows */
+					.summary-wrap, .payments-wrap, .invoice-meta, .contact-row { page-break-inside: avoid; }
+					table.items tbody tr, table.payments tbody tr { page-break-inside: avoid; break-inside: avoid; }
+					.table, table { page-break-inside: auto; }
 				</style>
 			</head>
 			<body>
-				${pages.join('\n')}
+				${pages.join("\n")}
 			</body>
 		</html>
 	`;
@@ -451,9 +641,14 @@ const generateInvoicePDF = async (order: any) => {
 	try {
 		const launchOptions: any = {
 			headless: true,
-			args: ["--no-sandbox", "--disable-setuid-sandbox", "--disable-dev-shm-usage"],
+			args: [
+				"--no-sandbox",
+				"--disable-setuid-sandbox",
+				"--disable-dev-shm-usage",
+			],
 		};
-		if (process.env.CHROME_PATH) launchOptions.executablePath = process.env.CHROME_PATH;
+		if (process.env.CHROME_PATH)
+			launchOptions.executablePath = process.env.CHROME_PATH;
 
 		try {
 			browser = await puppeteer.launch(launchOptions);
@@ -463,15 +658,37 @@ const generateInvoicePDF = async (order: any) => {
 		}
 
 		const page = await browser.newPage();
-		await page.setViewport({ width: 794, height: 1123, deviceScaleFactor: 1 });
+		await page.setViewport({
+			width: 794,
+			height: 1123,
+			deviceScaleFactor: 5,
+		});
 
 		const html = buildInvoiceHTML(order);
-		await page.setContent(html, { waitUntil: 'networkidle0', timeout: 30000 });
-		const pdfBuffer = await page.pdf({ format: 'A4', printBackground: true });
+		await page.setContent(html, {
+			waitUntil: "networkidle0",
+			timeout: 30000,
+		});
+
+		const pdfBuffer = await page.pdf({
+			path: "invoice.pdf",
+			format: "A4",
+			printBackground: true,
+			margin: {
+				top: "0mm",
+				right: "0mm",
+				bottom: "0mm",
+				left: "0mm",
+			},
+		});
+
 		await browser.close();
 		return pdfBuffer;
 	} catch (error) {
-		if (browser) try { await browser.close(); } catch {};
+		if (browser)
+			try {
+				await browser.close();
+			} catch {}
 		throw error;
 	}
 };

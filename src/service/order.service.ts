@@ -18,6 +18,7 @@ import ProductVariant from "../model/product-variant.model";
 import Product, { ProductModelAttributes } from "../model/product.model";
 import VariationItem from "../model/variation-item.model";
 import Variation from "../model/variation.model";
+import Staff from "../model/staff.model";
 import CustomerService from "../service/customer.service";
 import StaffService from "../service/staff.service";
 import ProductCategory from "../model/product-category.model";
@@ -395,6 +396,7 @@ class OrderService {
 					},
 					{ model: OrderImage, as: "images", separate: true },
 					{ model: PaymentDetails, as: "payments", separate: true },
+					{ model: Staff, as: "staff" },
 				],
 			});
 
