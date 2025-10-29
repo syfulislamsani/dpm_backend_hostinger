@@ -1,4 +1,4 @@
-import puppeteer from "puppeteer";
+import { getBrowserInstance } from "./puppeteerInstance";
 import fs from "fs";
 import path from "path";
 
@@ -637,27 +637,10 @@ const buildInvoiceHTML = (order: any) => {
 };
 
 const generateInvoicePDF = async (order: any) => {
-	let browser: any = null;
+	const browser = await getBrowserInstance();
+	let page;
 	try {
-		const launchOptions: any = {
-			headless: true,
-			args: [
-				"--no-sandbox",
-				"--disable-setuid-sandbox",
-				"--disable-dev-shm-usage",
-			],
-		};
-		if (process.env.CHROME_PATH)
-			launchOptions.executablePath = process.env.CHROME_PATH;
-
-		try {
-			browser = await puppeteer.launch(launchOptions);
-		} catch (err) {
-			// Fallback to default launch
-			browser = await puppeteer.launch({ headless: true });
-		}
-
-		const page = await browser.newPage();
+		page = await browser.newPage();
 		await page.setViewport({
 			width: 794,
 			height: 1123,
@@ -682,13 +665,14 @@ const generateInvoicePDF = async (order: any) => {
 			},
 		});
 
-		await browser.close();
+		await page.close();
 		return pdfBuffer;
 	} catch (error) {
-		if (browser)
+		if (page) {
 			try {
-				await browser.close();
+				await page.close();
 			} catch {}
+		}
 		throw error;
 	}
 };
