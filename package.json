@@ -8,8 +8,8 @@
 	"type": "commonjs",
 	"main": "server.js",
 	"scripts": {
-		//"postbuild": "node ./scripts/copyTemplate.js",
-		//"postbuild:win": "node ./scripts/copyTemplate.js",
+		"postbuild": "node ./scripts/copyTemplate.js",
+		"postbuild:win": "node ./scripts/copyTemplate.js",
 		"start": "node dist/server.js",
 		"dev": "cross-env NODE_ENV=development nodemon dist/server.js",
 		"cluster": "ts-node ./src/cluster.ts",
