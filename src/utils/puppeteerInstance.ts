@@ -8,7 +8,7 @@ export async function getBrowserInstance(): Promise<Browser> {
 
     try {
         browser = await puppeteer.launch({
-            executablePath: "/var/www/chrome/linux-141.0.7390.122/chrome-linux64/chrome",
+            executablePath: "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
             args: [
                 "--no-sandbox",
                 "--disable-setuid-sandbox",
@@ -20,11 +20,11 @@ export async function getBrowserInstance(): Promise<Browser> {
         });
         return browser;
     } catch (err) {
-        console.error("Failed to launch Puppeteer browser instance!");
-        console.error("Error:", err);
-        console.error("Node version:", process.version);
-        console.error("Platform:", process.platform, process.arch);
-        console.error("Env CHROME_PATH:", process.env.CHROME_PATH);
+        // console.error("Failed to launch Puppeteer browser instance!");
+        // console.error("Error:", err);
+        // console.error("Node version:", process.version);
+        // console.error("Platform:", process.platform, process.arch);
+        // console.error("Env CHROME_PATH:", process.env.CHROME_PATH);
         console.error("Attempted executablePath:", "/var/www/chrome/linux-141.0.7390.122/chrome-linux64/chrome");
         throw err;
     }

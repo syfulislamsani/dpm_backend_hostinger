@@ -61,7 +61,7 @@ const getInlineLogoDataUrl = (): string => {
 const buildInvoiceHTML = (order: any) => {
 	const items: OrderItem[] = order.orderItems || [];
 	const payments: Payment[] = order.payments || [];
-	const itemsPerPage = 6;
+	const itemsPerPage = 10;
 
 	const company = {
 		name: "Dhaka Plastic & Metal",
@@ -191,43 +191,15 @@ const buildInvoiceHTML = (order: any) => {
 					<div class="staff-phone">${escapeHtml(staffPhone || "")}</div>
 					<div class="sig-line"></div>
 					<div class="sig-label">Authorized Signature</div>
-					<!-- <div class="sig-for">For Dhaka Plastic & Metal</div> -->
 				</div>
 			</div>
 
 			<div class="footer-divider"></div>
 
-			<div class="contact-row">
-				<!-- Left Column: Phone -->
-				<div class="col left">
-					<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-						<path d="M3 5a2 2 0 012-2h2.3a1 1 0 01.97.757l.7 2.8a1 1 0 01-.24.92L7.4 9.6a15.05 15.05 0 006 6l1.2-1.6a1 1 0 01.92-.24l2.8.7A1 1 0 0121 16.7V19a2 2 0 01-2 2h-1C8.5 21 3 15.5 3 8V5z"/>
-					</svg>
-					<div>
-						<div>${company.phone}</div>
-						<div>${company.phone2}</div>
-					</div>
-				</div>
-
-				<!-- Center Column: Email -->
-				<div class="col center">
-					<svg width="24" height="24" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-  						<path d="M2 4a2 2 0 012-2h16a2 2 0 012 2v16a2 2 0 01-2 2H4a2 2 0 01-2-2V4zm2 0v0.01L12 13 20 4.01V4H4zm16 16V8l-8 6-8-6v12h16z" fill="#3871C2"/>
-					</svg>
-
-					<div>${company.email}</div>
-				</div>
-
-				<!-- Right Column: Location -->
-				<div class="col right">
-					<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-						<path d="M12 2a7 7 0 017 7c0 5-7 13-7 13S5 14 5 9a7 7 0 017-7zm0 9a2 2 0 100-4 2 2 0 000 4z"/>
-					</svg>
-					<div>
-						<div>Shop No: 94 & 142, Dhaka University</div>
-						<div>Market, Katabon Road, Dhaka-1000</div>
-					</div>
-				</div>
+			<div class="footer-contact-block" style="font-size:10px; color:#222; margin-top:2px; margin-bottom:2px; text-align:center;">
+				<span style="font-weight:700;">Need Help? Complaints:</span> ${company.phone}, ${company.phone2}
+				<span style="font-weight:700; margin-left:12px;">| Delivery & Product Updates:</span> ${company.phone}
+				<div><span style="font-weight:700; margin-left:12px;">Location:</span> Shop 94 & 142, Dhaka University Market, Katabon Road, Dhaka-1000, Bangladesh </div>
 			</div>
 		</div>
 	`;
@@ -343,19 +315,19 @@ const buildInvoiceHTML = (order: any) => {
 			<div class="invoice-meta">
 				<div class="bill-left">
 					<div class="meta-title">Billing Information:</div>
-					<div style = "font-size: 12px; font-weight: semi-bold;">Name: ${escapeHtml(order.customerName || order.customer?.name || "")}</div>
-					<div style = "font-size: 12px; font-weight: semi-bold;">Phone: ${escapeHtml(order.customerPhone || order.customer?.phone || "")}</div>
-					<div style = "font-size: 12px; font-weight: semi-bold;">Email: ${escapeHtml(order.customerEmail || order.customer?.email || "")}</div>
-					<div style = "font-size: 12px; font-weight: semi-bold;">Address: ${escapeHtml(order.billingAddress || order.customer?.billingAddress || "")}</div>
+					<div style = "font-size: 10px; font-weight: semi-bold;">Name: ${escapeHtml(order.customerName || order.customer?.name || "")}</div>
+					<div style = "font-size: 10px; font-weight: semi-bold;">Phone: ${escapeHtml(order.customerPhone || order.customer?.phone || "")}</div>
+					<div style = "font-size: 10px; font-weight: semi-bold;">Email: ${escapeHtml(order.customerEmail || order.customer?.email || "")}</div>
+					<div style = "font-size: 10px; font-weight: semi-bold;">Address: ${escapeHtml(order.billingAddress || order.customer?.billingAddress || "")}</div>
 				</div>
 				<div class="bill-right">
   <div class="meta-title">Shipping Information:</div>
-  <div style="font-size: 12px; font-weight: semi-bold;">
+  <div style="font-size: 10px; font-weight: semi-bold;">
     Shipping Method: ${escapeHtml(order.deliveryMethod === "courier" ? courierName || "Courier" : "Shop Pickup")}
   </div>
   ${
 		order.courierAddress
-			? `<div style="font-size: 12px; font-weight: semi-bold;">Address: ${escapeHtml(order.courierAddress)}</div>`
+			? `<div style="font-size: 10px; font-weight: semi-bold;">Address: ${escapeHtml(order.courierAddress)}</div>`
 			: ""
   }
 </div>
@@ -398,7 +370,9 @@ const buildInvoiceHTML = (order: any) => {
 					<div class="row"><span>Sub Total</span><span>${formatCurrency(subTotal - agg.designChargeTotal + discountAmount)} ${displayCurrency}</span></div>
 					<div class="row"><span>Design Charge</span><span>${formatCurrency(agg.designChargeTotal)} ${displayCurrency}</span></div>
 					<div class="row"><span>Discount</span><span>${formatCurrency(discountAmount)} ${displayCurrency}</span></div>
-					<div class="grand-row"><span>GRAND TOTAL</span><span>${formatCurrency(grandTotal)} ${displayCurrency}</span></div>
+					<div class="row"><span>Grand Total</span><span>${formatCurrency(grandTotal)} ${displayCurrency}</span></div>
+					<div class="row"><span>Amount Paid</span><span>${formatCurrency(totalPaidAmount)} ${displayCurrency}</span></div>
+					<div class="grand-row"><span>Amount Due</span><span>${formatCurrency(grandTotal)} ${displayCurrency}</span></div>
 				</div>
 			</div>
 		`;
@@ -410,10 +384,10 @@ const buildInvoiceHTML = (order: any) => {
 			<div class="payments-wrap">
 				<div class="section-title">Payment Details</div>
 				${renderPayments()}
-				<div class="paid-due">
+				<!-- <div class="paid-due">
 					<div class="paid">Amount Paid: ${formatCurrency(totalPaidAmount)} ${displayCurrency}</div>
 					<div class="due">Amount Due: ${formatCurrency(amountDue)} ${displayCurrency}</div>
-				</div>
+				</div> -->
 			</div>`
 					: `
 			<div class="paid-due single">
@@ -425,10 +399,22 @@ const buildInvoiceHTML = (order: any) => {
 				payments.length,
 			);
 			const maxPageHeight = 1050; // typical A4 height in px (approx)
-			const baseContentHeight = 600 + pageItems.length * 40; // header + items height
+			// Estimate base content height: header + items + summary + some buffer for signature
+			// Calculate heights for all sections
+			const headerHeight = 120; // px
+			const billShipHeight = i === 0 ? 80 : 0; // px
+			const sectionTitleHeight = 28; // px
+			const itemsTableHeight = pageItems.length * 32 + 40; // px (row height + header)
+			const summaryHeight = isLastPage ? 110 : 0; // px
+			const signatureHeight = 80; // px
+			const paymentsTableHeight = payments.length > 0 ? 40 + payments.length * 32 : 0; // px (header + rows)
 
-			const fitsOnSamePage =
-				baseContentHeight + estimatedPaymentHeight < maxPageHeight;
+			// Total height if payment table is included
+			const totalHeightWithPayments = headerHeight + billShipHeight + sectionTitleHeight + itemsTableHeight + summaryHeight + paymentsTableHeight + signatureHeight;
+			// Total height without payment table
+			const totalHeightWithoutPayments = headerHeight + billShipHeight + sectionTitleHeight + itemsTableHeight + summaryHeight + signatureHeight;
+
+			const fitsOnSamePage = totalHeightWithPayments < maxPageHeight;
 
 			if (fitsOnSamePage) {
 				// keep payments below summary
@@ -461,10 +447,17 @@ const buildInvoiceHTML = (order: any) => {
 	// === Add an extra page for payments if it didn’t fit ===
 	const estimatedPaymentHeight = estimatePaymentsHeight(payments.length);
 	const lastChunk = chunks[chunks.length - 1];
-	const baseContentHeight = 600 + lastChunk.length * 40;
+	// Recalculate for last page
+	const headerHeight = 120;
+	const billShipHeight = chunks.length === 1 ? 80 : 0;
+	const sectionTitleHeight = 28;
+	const itemsTableHeight = lastChunk.length * 32 + 40;
+	const summaryHeight = 110;
+	const signatureHeight = 80;
+	const paymentsTableHeight = payments.length > 0 ? 40 + payments.length * 32 : 0;
 	const maxPageHeight = 1050;
-	const paymentsNeedExtraPage =
-		baseContentHeight + estimatedPaymentHeight >= maxPageHeight;
+	const totalHeightWithPayments = headerHeight + billShipHeight + sectionTitleHeight + itemsTableHeight + summaryHeight + paymentsTableHeight + signatureHeight;
+	const paymentsNeedExtraPage = totalHeightWithPayments >= maxPageHeight;
 
 	if (paymentsNeedExtraPage && payments.length > 0) {
 		const extraPage = `
@@ -474,10 +467,10 @@ const buildInvoiceHTML = (order: any) => {
 					<div class="content">
 						<div class="section-title">Payment Details</div>
 						${renderPayments()}
-						<div class="paid-due">
+						<!-- <div class="paid-due">
 							<div class="paid">Amount Paid: ${formatCurrency(totalPaidAmount)} ${displayCurrency}</div>
 							<div class="due">Amount Due: ${formatCurrency(amountDue)} ${displayCurrency}</div>
-						</div>
+						</div> -->
 					</div>
 					${renderFooter()}
 				</div>
@@ -519,19 +512,19 @@ const buildInvoiceHTML = (order: any) => {
 					.email-link {color: var(--blue); font-size: 10px;}
 					/* content area uses flex-grow so the footer can stay pinned without absolute positioning */
 					.content { padding:10px 0 20px; flex:1 0 auto; overflow: visible; }
-					.section-title { font-weight:700; color: #000; margin:10px 0 8px; font-size:13px; text-transform:uppercase; }
+					.section-title { font-weight:700; color: #000; margin:10px 0 8px; font-size:12px; text-transform:uppercase; }
 
 					/* Billing/Shipping */
 					.invoice-meta { display:flex; justify-content:space-between; gap:16px; padding:8px 0 6px; }
 					.bill-left, .bill-right { width:50%; font-size:11px; padding:8px 10px; }
-					.meta-title { font-weight:700; color:#000; margin-bottom:6px; font-size:14px; }
+					.meta-title { font-weight:700; color:#000; margin-bottom:6px; font-size:12px; }
 
 					/* Table */
 					table { width:100%; border-collapse:collapse; border-spacing:0; border:1px solid #000; }
 					table th, table td { border:1px solid #000; }
 					table.items { border-radius:0; overflow:hidden; }
-					table.items thead th { background:#3871C2; color:#fff; font-weight:700; font-size:12px; padding:6px 6px; }
-					table.items tbody td { padding:8px 6px; font-size:12px; word-break:break-word; }
+					table.items thead th { background:#3871C2; color:#fff; font-weight:700; font-size:14px; padding:3px 3px; }
+					table.items tbody td { padding:2px 3px; font-size:10px; word-break:break-word; }
 					.col-sn{ width:44px; text-align:center; }
 					.col-desc{ width:auto; }
 					.col-qty{ width:100px; text-align:center; }
@@ -540,21 +533,21 @@ const buildInvoiceHTML = (order: any) => {
 					.muted{ font-weight:400; opacity:.9; }
 					.tcenter { text-align:center; }
 					.tright { text-align:right; }
-					.item-variant { font-size:11px; color:#5f6c7b; margin-top:3px; }
-					.item-desc { font-size:12px; color:#4b5563; margin-top:4px; }
-					.item-title { font-weight:600; color:#111827; font-size:13px; }
+					.item-variant { font-size:10px; color:#5f6c7b; margin-top:3px; }
+					.item-desc { font-size:10px; color:#4b5563; margin-top:2px; }
+					.item-title { font-weight:600; color:#111827; font-size:11px; }
 
 					/* Summary */
 					.summary-wrap{ display:flex; justify-content:flex-end; margin-top:12px; }
-					.summary-box{ width:320px; border-radius:0px; overflow:hidden; font-size:12px; font-weight:600; }
-					.summary-box .row{ display:flex; justify-content:space-between; padding:8px 10px; }
-					.summary-box .grand-row{ display:flex; justify-content:space-between; padding:10px; background:#3871C2; color:#fff; font-weight:800; }
+					.summary-box{ width:320px; border-radius:0px; overflow:hidden; font-size:11px; font-weight:600; }
+					.summary-box .row{ display:flex; justify-content:space-between; padding:2px 6px; }
+					.summary-box .grand-row{ display:flex; justify-content:space-between; padding:5px; background:#3871C2; color:#fff; font-weight:800; }
 
 					/* Payments */
 					.payments-wrap{ margin-top:12px; }
 					table.payments{ border:1px solid #000; border-radius:0; overflow:hidden; width:100%; }
-					.payments thead th { background:#3871C2; color:#fff; padding:8px 10px; font-size:12px; }
-					.payments tbody td { padding:9px 10px; font-size:12px; word-break:break-word; }
+					.payments thead th { background:#3871C2; color:#fff; padding:2px 3px; font-size:12px; }
+					.payments tbody td { padding:2px 3px; font-size:11px; word-break:break-word; }
 					.col-pay-sn{ width:60px; text-align:center; }
 					.col-pay-method{ width:auto; text-align:left; }
 					.col-pay-status{ width:140px; text-align:left; }
@@ -568,25 +561,25 @@ const buildInvoiceHTML = (order: any) => {
 
 					/* Footer */
 					/* Footer stays at the bottom via flex layout so it prints without extra blank space. */
-					.inv-footer { border-top:none; padding-top:6px; position:relative; margin-top:auto; box-sizing:border-box; }
+					.inv-footer { border-top:none; padding-top:5px; position:relative; margin-top:auto; box-sizing:border-box; }
 					.footer-top{ display:flex; justify-content:space-between; align-items:flex-start; gap:16px; }
 					.footer-top .staff-block{ margin-left:auto; }
-					.inv-footer .nb{ max-width:65%; font-size:12px; color:#111; display:none; }
+					.inv-footer .nb{ max-width:65%; font-size:11px; color:#111; display:none; }
 					.page:last-child .inv-footer .nb{ display:block; }
 					.nb b{ font-weight:800; }
 					.staff-block{ text-align:right; min-width:220px; }
-					.staff-name{ font-size: 12px; font-weight:700; }
+					.staff-name{ font-size: 11px; font-weight:700; }
 					.staff-phone{ font-size:11px; color:#374151; margin-bottom:6px; }
 					.sig-line{ width:180px; height:1px; background:#999; margin-left:auto; }
-					.sig-label{ font-size:12px; color:#333; margin-top:4px; }
-					.sig-for{ font-size:12px; color:#555; }
-					.footer-divider{ height:1px; background:#9aa4b2; margin:6px 0 4px; opacity:.6; }
+					.sig-label{ font-size:11px; color:#333; margin-top:4px; }
+					.sig-for{ font-size:11px; color:#555; }
+					.footer-divider{ height:1px; background:#9aa4b2; margin:4px 0 4px; opacity:.6; }
 					.contact-row {
 						display: flex;
 						justify-content: space-between;
 						align-items: center;
 						gap: 12px;
-						font-size: 12px;
+						font-size: 11px;
 						color: #334155;
 					}
 
