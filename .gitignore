@@ -203,4 +203,5 @@ dist
 # and uncomment the following lines
 # .pnp.*
 
+invoice.pdf
 # End of https://www.toptal.com/developers/gitignore/api/visualstudiocode,node,linux,yarn
