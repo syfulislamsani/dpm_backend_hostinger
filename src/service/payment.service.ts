@@ -220,6 +220,29 @@ class PaymentService {
 			if (!payment) {
 				return false;
 			}
+			// Remove pending payments only if order is fully paid (due == 0)
+			// Find the payment record to get orderId
+			// const paidPayment = await Payment.findOne({ where: { transactionId } });
+			// if (paidPayment && isPaid) {
+			// 	const orderId = paidPayment.orderId;
+			// 	// Get all payments for this order
+			// 	const payments = await Payment.findAll({ where: { orderId } });
+			// 	let paid = 0;
+			// 	payments.forEach((p: any) => { if (p.isPaid) paid += p.amount; });
+			// 	// Get order total
+			// 	const Order = require("../model/order.model").default;
+			// 	const order = await Order.findByPk(orderId);
+			// 	const grandTotal = Number(order?.orderTotalPrice || 0);
+			// 	const due = Math.max(grandTotal - paid, 0);
+			// 	if (due === 0) {
+			// 		await Payment.destroy({
+			// 			where: {
+			// 				orderId,
+			// 				isPaid: false
+			// 			}
+			// 		});
+			// 	}
+			// }
 
 			return true;
 		} catch (err: any) {

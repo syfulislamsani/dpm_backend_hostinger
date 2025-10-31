@@ -286,7 +286,7 @@ const buildInvoiceHTML = (order: any) => {
 				const amt = toNum(p.amount);
 				return `<tr>
 					<td class="tcenter">${i + 1}</td>
-					<td>${escapeHtml(method)}</td>
+					<td>${escapeHtml(method) === "cod-payment" ? "Cash Payment" : "Online Payment"}</td>
 					<td class="tcenter status ${status}">${status}</td>
 					<td class="tright">${formatCurrency(amt)} ${displayCurrency}</td>
 				</tr>`;
@@ -372,7 +372,7 @@ const buildInvoiceHTML = (order: any) => {
 					<div class="row"><span>Discount</span><span>${formatCurrency(discountAmount)} ${displayCurrency}</span></div>
 					<div class="row"><span>Grand Total</span><span>${formatCurrency(grandTotal)} ${displayCurrency}</span></div>
 					<div class="row"><span>Amount Paid</span><span>${formatCurrency(totalPaidAmount)} ${displayCurrency}</span></div>
-					<div class="grand-row"><span>Amount Due</span><span>${formatCurrency(grandTotal)} ${displayCurrency}</span></div>
+					<div class="grand-row"><span>Amount Due</span><span>${formatCurrency(amountDue)} ${displayCurrency}</span></div>
 				</div>
 			</div>
 		`;

@@ -585,6 +585,16 @@ class OrderService {
 			);
 			console.log('[OrderService.updateOrderPaymentStatus] update result', { orderId, result });
 			if (!result) return false;
+
+			// If the order payment status moved to 'paid', hard delete any pending (isPaid=false) payments for this order
+			if (paymentStatus === "paid") {
+				try {
+					await PaymentDetails.destroy({ where: { orderId, isPaid: false } });
+					console.log('[OrderService.updateOrderPaymentStatus] removed pending payments', { orderId });
+				} catch (err) {
+					console.error('[OrderService.updateOrderPaymentStatus] failed to remove pending payments', err);
+				}
+			}
 			return true;
 		} catch (err: any) {
 			
