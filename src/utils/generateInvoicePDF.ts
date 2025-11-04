@@ -205,7 +205,10 @@ const buildInvoiceHTML = (order: any) => {
 
 			<div class="footer-contact-block" style="font-size:14px; color:#222; margin-top:2px; margin-bottom:2px; text-align:center;">
 				<span style="font-weight:700;">Need Help? Complaints:</span> ${company.phone}, ${company.phone2}
-				<span style="font-weight:700; margin-left:12px;">| Delivery & Product Updates:</span> ${company.phone}
+
+				<span style="font-weight:700; margin-left: 2px; margin-right: 2px;">|</span>
+
+				<span style="font-weight:700; margin-left:0px;">Delivery & Product Updates:</span> ${company.phone}
 				<div><span style="font-weight:700; margin-left:12px;">Location:</span> Shop 94 & 142, Dhaka University Market, Katabon Road, Dhaka-1000, Bangladesh </div>
 			</div>
 		</div>
@@ -510,7 +513,9 @@ const buildInvoiceHTML = (order: any) => {
 					/* Each .page represents a physical A4 page. We set an exact page box and then inset the printable area using .page-inner so the footer can be absolutely positioned inside that box. */
 					.page { width:210mm; height:297mm; page-break-after: always; position:relative; box-sizing:border-box; }
 					.page-inner { position: absolute; inset: var(--page-margin); /* top/right/bottom/left */ display:flex; flex-direction:column; box-sizing:border-box; }
+
 					/* Header */
+
 					.inv-header { display:flex; justify-content:space-between; align-items:center; padding:6px 0 10px; border-bottom:2px solid var(--blue); }
 					.inv-header .left { display:flex; align-items:center; gap:12px; }
 					.logo { width:70px; height:70px; object-fit:contain; }
@@ -519,16 +524,18 @@ const buildInvoiceHTML = (order: any) => {
 					.company-tag { font-size:14px; color: #000; }
 					.company-tag.small { font-size:11px; }
 					.inv-header .right { text-align:right; }
-					.invoice-title { font-weight:800; color:var(--blue); font-size:18px; letter-spacing:0.5px; }
-					.invoice-no { font-weight:700; color:#111; }
-					.small { font-size:10px; color: #000; }
+					.invoice-title { font-weight:800; color:var(--blue); font-size:20px; letter-spacing:0.5px; }
+					.invoice-no { font-weight:700; color:#111;font-size:14px; }
+					.small { font-size:12px; color: #000; }
 					.email-link {color: var(--blue); font-size: 14px;}
+
 					/* content area uses flex-grow so the footer can stay pinned without absolute positioning */
-					.content { padding:10px 0 20px; flex:1 0 auto; overflow: visible; }
+
+					.content { padding:5px 0 20px; flex:1 0 auto; overflow: visible; }
 					.section-title { font-weight:700; color: #000; margin:10px 0 8px; font-size:16px; text-transform:uppercase; }
 
 					/* Billing/Shipping */
-					.invoice-meta { display:flex; justify-content:space-between; gap:16px; padding:8px 0 6px; }
+					.invoice-meta { display:flex; justify-content:space-between; gap:16px; padding:4px 0 6px; }
 					.bill-left, .bill-right { width:50%; font-size:12px; padding:8px 10px; }
 					.meta-title { font-weight:700; color:#000; margin-bottom:6px; font-size:16px; }
 
@@ -542,7 +549,7 @@ const buildInvoiceHTML = (order: any) => {
 					.col-desc{ width:auto; }
 					.col-qty{ width:100px; text-align:center; }
 					.col-unit{ width:150px; text-align:center; }
-					.col-total{ width:120px; text-align:center ; }
+					.col-total{ width:120px; text-align:center; }
 					.muted{ font-weight:400; opacity:.9; }
 					.tcenter { text-align:center; }
 					.tright { text-align:right; }
