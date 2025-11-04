@@ -8,7 +8,7 @@ export async function getBrowserInstance(): Promise<Browser> {
 
     try {
         const pathToChromeLocal = "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe";
-        const pathToChrome = "/var/www/chrome/linux-141.0.7390.122/chrome-linux64/chrome";
+        const pathToChrome = "C:\\Users\\ADMiN\\AppData\\Local\\Google\\Chrome\\Application\\chrome.exe";
         browser = await puppeteer.launch({
             executablePath: pathToChrome,
             args: [

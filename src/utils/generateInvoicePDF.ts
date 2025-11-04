@@ -183,8 +183,15 @@ const buildInvoiceHTML = (order: any) => {
 		<div class="inv-footer">
 			<div class="footer-top">
 				<div class="nb">
-					<div><b>NB: Delivery and Installation charges are the customer's responsibility (if applicable).</b></div>
-					<div>Thank you for choosing Dhaka Plastic & Metal!</div>
+					<div style="font-weight: 700; margin-bottom: 3px; font-size: 12px;">Payment Terms:</div>
+						<ul style="margin: 0; padding-left: 18px; list-style-position: outside; font-size: 11px;">
+							<li style="margin-bottom: 2px;"> <b>For Installation Service:</b> Full "Amount Due" must be paid before our team is dispatched to the site.
+							</li>
+							<li style="margin-bottom: 2px;"> <b>For Courier Delivery:</b> Full "Amount Due" is payable to the courier upon delivery (Cash on Delivery).
+							</li>
+							<li> <b>Note:</b> Courier and installation charges are the customer’s responsibility (if applicable).
+							</li>
+						</ul>
 				</div>
 				<div class="staff-block">
 					<div class="staff-name">${escapeHtml(staffName || "")}</div>
@@ -196,7 +203,7 @@ const buildInvoiceHTML = (order: any) => {
 
 			<div class="footer-divider"></div>
 
-			<div class="footer-contact-block" style="font-size:10px; color:#222; margin-top:2px; margin-bottom:2px; text-align:center;">
+			<div class="footer-contact-block" style="font-size:14px; color:#222; margin-top:2px; margin-bottom:2px; text-align:center;">
 				<span style="font-weight:700;">Need Help? Complaints:</span> ${company.phone}, ${company.phone2}
 				<span style="font-weight:700; margin-left:12px;">| Delivery & Product Updates:</span> ${company.phone}
 				<div><span style="font-weight:700; margin-left:12px;">Location:</span> Shop 94 & 142, Dhaka University Market, Katabon Road, Dhaka-1000, Bangladesh </div>
@@ -253,8 +260,8 @@ const buildInvoiceHTML = (order: any) => {
 					<td class="tcenter">${pageStartIndex + idx + 1}</td>
 					<td><div class="item-title">${productName}${sizeLabel}</div>${detailLabels ? `<div class="item-variant">${detailLabels}</div>` : ""}${it.unlistedProduct?.description ? `<div class="item-desc">${escapeHtml(it.unlistedProduct.description)}</div>` : ""}</td>
 					<td class="tcenter">${qty}${qty > 1 ? " pcs" : " pc"}</td>
-					<td class="tright">${formatCurrency(unitNet)} ${displayCurrency}</td>
-					<td class="tright">${formatCurrency(price)} ${displayCurrency}</td>
+					<td class="tcenter">${formatCurrency(unitNet)} ${displayCurrency}</td>
+					<td class="tcenter">${formatCurrency(price)} ${displayCurrency}</td>
 				</tr>`;
 			})
 			.join("\n");
@@ -264,7 +271,7 @@ const buildInvoiceHTML = (order: any) => {
 				<thead>
 						<tr>
 							<th class="col-sn">S/N</th>
-							<th class="col-desc">DESCRIPTION</th>
+							<th class="col-desc">PRODUCT DETAILS</th>
 							<th class="col-qty">QTY / SQFT</th>
 							<th class="col-unit">UNIT PRICE</th>
 							<th class="col-total">TOTAL</th>
@@ -286,9 +293,9 @@ const buildInvoiceHTML = (order: any) => {
 				const amt = toNum(p.amount);
 				return `<tr>
 					<td class="tcenter">${i + 1}</td>
-					<td>${escapeHtml(method) === "cod-payment" ? "Cash Payment" : "Online Payment"}</td>
-					<td class="tcenter status ${status}">${status}</td>
-					<td class="tright">${formatCurrency(amt)} ${displayCurrency}</td>
+					<td class="tcenter">${escapeHtml(method) === "cod-payment" ? "Cash Payment" : "Online Payment"}</td>
+					<td class="tcenter ${status}">${status}</td>
+					<td class="tcenter">${formatCurrency(amt)} ${displayCurrency}</td>
 				</tr>`;
 			})
 			.join("\n");
@@ -297,7 +304,7 @@ const buildInvoiceHTML = (order: any) => {
 			<table class="payments">
 				<thead>
 					<tr>
-						<th class="col-pay-sn">#</th>
+						<th class="col-pay-sn">S/N</th>
 						<th class="col-pay-method">Payment Method</th>
 						<th class="col-pay-status">Status</th>
 						<th class="col-pay-amount">Amount Paid</th>
@@ -315,19 +322,25 @@ const buildInvoiceHTML = (order: any) => {
 			<div class="invoice-meta">
 				<div class="bill-left">
 					<div class="meta-title">Billing Information:</div>
-					<div style = "font-size: 10px; font-weight: semi-bold;">Name: ${escapeHtml(order.customerName || order.customer?.name || "")}</div>
-					<div style = "font-size: 10px; font-weight: semi-bold;">Phone: ${escapeHtml(order.customerPhone || order.customer?.phone || "")}</div>
-					<div style = "font-size: 10px; font-weight: semi-bold;">Email: ${escapeHtml(order.customerEmail || order.customer?.email || "")}</div>
-					<div style = "font-size: 10px; font-weight: semi-bold;">Address: ${escapeHtml(order.billingAddress || order.customer?.billingAddress || "")}</div>
+					<div style = "font-size: 14px; font-weight: semi-bold;">Name: ${escapeHtml(order.customerName || order.customer?.name || "")}</div>
+					<div style = "font-size: 14px; font-weight: semi-bold;">Phone: ${escapeHtml(order.customerPhone || order.customer?.phone || "")}</div>
+					<div style = "font-size: 14px; font-weight: semi-bold;">Email: ${escapeHtml(order.customerEmail || order.customer?.email || "")}</div>
+					<div style = "font-size: 14px; font-weight: semi-bold;">Address: ${escapeHtml(order.billingAddress || order.customer?.billingAddress || "")}</div>
 				</div>
 				<div class="bill-right">
   <div class="meta-title">Shipping Information:</div>
-  <div style="font-size: 10px; font-weight: semi-bold;">
-    Shipping Method: ${escapeHtml(order.deliveryMethod === "courier" ? courierName || "Courier" : "Shop Pickup")}
+  <div style="font-size: 14px; font-weight: semi-bold;">
+    Shipping Method: ${escapeHtml(order.deliveryMethod === "courier" ?  "Courier" : "Shop Pickup")}
   </div>
+		${
+	 (order.deliveryMethod === "courier" && courierName)
+		? `<div style="font-size: 14px; font-weight: semi-bold;">Preferred Courier: ${escapeHtml(courierName)}</div>`
+		: ""
+   	  }
+
   ${
 		order.courierAddress
-			? `<div style="font-size: 10px; font-weight: semi-bold;">Address: ${escapeHtml(order.courierAddress)}</div>`
+			? `<div style="font-size: 14px; font-weight: semi-bold;">Address: ${escapeHtml(order.courierAddress)}</div>`
 			: ""
   }
 </div>
@@ -382,7 +395,7 @@ const buildInvoiceHTML = (order: any) => {
 				payments && payments.length > 0
 					? `
 			<div class="payments-wrap">
-				<div class="section-title">Payment Details</div>
+				<div class="section-title">Payment History</div>
 				${renderPayments()}
 				<!-- <div class="paid-due">
 					<div class="paid">Amount Paid: ${formatCurrency(totalPaidAmount)} ${displayCurrency}</div>
@@ -465,7 +478,7 @@ const buildInvoiceHTML = (order: any) => {
 				<div class="page-inner">
 					${renderHeader()}
 					<div class="content">
-						<div class="section-title">Payment Details</div>
+						<div class="section-title">Payment History</div>
 						${renderPayments()}
 						<!-- <div class="paid-due">
 							<div class="paid">Amount Paid: ${formatCurrency(totalPaidAmount)} ${displayCurrency}</div>
@@ -502,58 +515,61 @@ const buildInvoiceHTML = (order: any) => {
 					.inv-header .left { display:flex; align-items:center; gap:12px; }
 					.logo { width:70px; height:70px; object-fit:contain; }
 					.company-block { line-height:1.15; }
-					.company-name { font-weight:700; font-size:29px; color:var(--black); }
-					.company-tag { font-size:10px; color: #000; }
+					.company-name { font-weight:700; font-size:39px; color:var(--black); }
+					.company-tag { font-size:14px; color: #000; }
 					.company-tag.small { font-size:11px; }
 					.inv-header .right { text-align:right; }
 					.invoice-title { font-weight:800; color:var(--blue); font-size:18px; letter-spacing:0.5px; }
 					.invoice-no { font-weight:700; color:#111; }
 					.small { font-size:10px; color: #000; }
-					.email-link {color: var(--blue); font-size: 10px;}
+					.email-link {color: var(--blue); font-size: 14px;}
 					/* content area uses flex-grow so the footer can stay pinned without absolute positioning */
 					.content { padding:10px 0 20px; flex:1 0 auto; overflow: visible; }
-					.section-title { font-weight:700; color: #000; margin:10px 0 8px; font-size:12px; text-transform:uppercase; }
+					.section-title { font-weight:700; color: #000; margin:10px 0 8px; font-size:16px; text-transform:uppercase; }
 
 					/* Billing/Shipping */
 					.invoice-meta { display:flex; justify-content:space-between; gap:16px; padding:8px 0 6px; }
-					.bill-left, .bill-right { width:50%; font-size:11px; padding:8px 10px; }
-					.meta-title { font-weight:700; color:#000; margin-bottom:6px; font-size:12px; }
+					.bill-left, .bill-right { width:50%; font-size:12px; padding:8px 10px; }
+					.meta-title { font-weight:700; color:#000; margin-bottom:6px; font-size:16px; }
 
 					/* Table */
-					table { width:100%; border-collapse:collapse; border-spacing:0; border:1px solid #000; }
-					table th, table td { border:1px solid #000; }
+					table { width:100%; border-collapse:collapse; border-spacing:0; border:1px solid #00000094; }
+					table th, table td { border:1px solid #00000094; }
 					table.items { border-radius:0; overflow:hidden; }
 					table.items thead th { background:#3871C2; color:#fff; font-weight:700; font-size:14px; padding:2px 3px; }
 					table.items tbody td { padding:2px 3px; font-size:11px; word-break:break-word; }
 					.col-sn{ width:44px; text-align:center; }
 					.col-desc{ width:auto; }
 					.col-qty{ width:100px; text-align:center; }
-					.col-unit{ width:150px; text-align:right; }
-					.col-total{ width:120px; text-align:right; }
+					.col-unit{ width:150px; text-align:center; }
+					.col-total{ width:120px; text-align:center ; }
 					.muted{ font-weight:400; opacity:.9; }
 					.tcenter { text-align:center; }
 					.tright { text-align:right; }
-					.item-variant { font-size:10px; color:#5f6c7b; margin-top:3px; }
-					.item-desc { font-size:10px; color:#4b5563; margin-top:2px; }
-					.item-title { font-weight:600; color:#111827; font-size:11px; }
+					.item-variant { font-size:11px; color:#5f6c7b; margin-top:3px; }
+					.item-desc { font-size:11px; color:#4b5563; margin-top:2px; }
+					.item-title { font-weight:600; color:#111827; font-size:12px; }
 
 					/* Summary */
-					.summary-wrap{ display:flex; justify-content:flex-end; margin-top:12px; }
-					.summary-box{ width:320px; border-radius:0px; overflow:hidden; font-size:11px; font-weight:600; }
+					
+				.summary-wrap{ display:flex; justify-content:flex-end; margin-top:12px; }
+					.summary-box{ width:290px; border-radius:0px; overflow:hidden; font-size:12px; font-weight:600; }
 					.summary-box .row{ display:flex; justify-content:space-between; padding:2px 6px; }
 					.summary-box .grand-row{ display:flex; justify-content:space-between; padding:5px; background:#3871C2; color:#fff; font-weight:800; }
 
+				.summary-box .grand-row{ display:flex; justify-content:space-between; padding:5px; background:#3871C2; color:#fff; font-weight:800; }
+
 					/* Payments */
 					.payments-wrap{ margin-top:12px; }
-					table.payments{ border:1px solid #000; border-radius:0; overflow:hidden; width:100%; }
-					.payments thead th { background:#3871C2; color:#fff; padding:2px 3px; font-size:12px; }
+					table.payments{ border:1px solid #00000094; border-radius:0; overflow:hidden; width:100%; }
+					.payments thead th { background:#3871C2; color:#fff; padding:2px 3px; font-size:14px; }
 					.payments tbody td { padding:2px 3px; font-size:11px; word-break:break-word; }
 					.col-pay-sn{ width:60px; text-align:center; }
-					.col-pay-method{ width:auto; text-align:left; }
-					.col-pay-status{ width:140px; text-align:left; }
-					.col-pay-amount{ width:160px; text-align:right; }
-					.status.paid{ color:#0a7f2e; font-weight:700; text-transform:capitalize; text-align:left; }
-					.status.pending{ color:#b45309; font-weight:700; text-transform:capitalize; text-align:left; }
+					.col-pay-method{ width:auto; text-align:center; }
+					.col-pay-status{ width:140px; text-align:center; }
+					.col-pay-amount{ width:160px; text-align:center; }
+					.status.paid{ color:#0a7f2e; font-weight:700; text-transform:uppercase; text-align:center; }
+					.status.pending{ color:#b45309; font-weight:700; text-transform:uppercase; text-align:center; }
 					.paid-due{ display:flex; justify-content:space-between; margin-top:8px; font-weight:700; }
 					.paid-due.single{ justify-content:flex-end; }
 					.paid{ color:#0a7f2e; }
@@ -564,15 +580,15 @@ const buildInvoiceHTML = (order: any) => {
 					.inv-footer { border-top:none; padding-top:5px; position:relative; margin-top:auto; box-sizing:border-box; }
 					.footer-top{ display:flex; justify-content:space-between; align-items:flex-start; gap:16px; }
 					.footer-top .staff-block{ margin-left:auto; }
-					.inv-footer .nb{ max-width:65%; font-size:11px; color:#111; display:none; }
+					.inv-footer .nb{ max-width:95%; font-size:11px; color:#111; display:none; }
 					.page:last-child .inv-footer .nb{ display:block; }
 					.nb b{ font-weight:800; }
-					.staff-block{ text-align:right; min-width:220px; }
-					.staff-name{ font-size: 11px; font-weight:700; }
-					.staff-phone{ font-size:11px; color:#374151; margin-bottom:6px; }
-					.sig-line{ width:180px; height:1px; background:#999; margin-left:auto; }
-					.sig-label{ font-size:11px; color:#333; margin-top:4px; }
-					.sig-for{ font-size:11px; color:#555; }
+					.staff-block{ text-align:right; min-width:180px; }
+					.staff-name{ text-align:auto; font-size: 15px; font-weight:700; }
+					.staff-phone{ text-align:auto; font-size:12px; color:#374151; margin-bottom:6px; }
+					.sig-line{ width:120px; height:1px; background:#999; margin-left:auto; }
+					.sig-label{ font-size:12px; color:#333; margin-top:4px; font-weight:700;}
+					.sig-for{ font-size:12px; color:#555; }
 					.footer-divider{ height:1px; background:#9aa4b2; margin:4px 0 4px; opacity:.6; }
 					.contact-row {
 						display: flex;
@@ -668,6 +684,6 @@ const generateInvoicePDF = async (order: any) => {
 		}
 		throw error;
 	}
-};
+};  
 
 export { generateInvoicePDF };
